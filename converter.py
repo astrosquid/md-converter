@@ -1,4 +1,5 @@
 #!/usr/local/bin/python3
+from sys import argv
 
 class FileOps:
     def __init__(self, path):
@@ -22,26 +23,28 @@ class TagFormatter:
     def __init__(self):
         return
 
-    def wrap_tag(self, tag, content):
-        return '<{}>{}</{}>' % {tag, content, tag}
+class Tag:
+    def __init__(self, html_tag, content):
+        self.content = content
 
-class Header:
+    def wrap_tag(self):
+        return '<{}>{}</{}>' % {self.html_tag, self.content, self.html_tag}
+
+class Header(Tag):
     def __init__(self, level):
+        super().__init__()
         self.level = level
-        self.html_tag = 'h'
 
-class Paragraph:
-    def __init__(self):
-        self.html_tag = 'p'
+class Link(Tag):
+    def __init__(self, link):
+        super().__init__()
+        self.link = link
+        self.html_tag = 'a'
 
-class Italics:
-    def __init__(self):
-        self.html_tag = 'i'
+    def wrap_tag(self):
+        return '<{} href=\'{}\'>{}</{}>' % {self.html_tag, self.content, self.html_tag}
 
-class Bold:
-    def __init__(self):
-        self.html_tag = 'b'
-
-class Link:
-    def __init__(self):
-        self.html_tag = 'b'
+def convert():
+    path = argv[1]
+    fo = FileOps(path)
+    
