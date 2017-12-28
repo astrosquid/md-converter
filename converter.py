@@ -3,14 +3,17 @@ from sys import argv
 
 class FileOps:
     def __init__(self, path):
-        self.path = path
+        self.in_path = path
+        self.out_path = path.split('.')[0] + '.html'
 
     def get_location(self):
-        return self.path
+        return self.in_path
 
-    def open_file(self):
-        self.in_file = open(self.path, 'r')
-        self.out_file = open(self.path, 'w')
+    def open_files(self):
+        self.in_file = open(self.in_path, 'r')
+        self.out_file = open(self.out_path, 'w')
+        with open(self.in_path) as f:
+            self.content = f.readlines
 
     def write(self, content):
         self.out_file.write(content)
@@ -26,6 +29,7 @@ class TagFormatter:
 class Tag:
     def __init__(self, html_tag, content):
         self.content = content
+        self.html_tag = html_tag
 
     def wrap_tag(self):
         return '<{}>{}</{}>' % {self.html_tag, self.content, self.html_tag}
@@ -44,7 +48,15 @@ class Link(Tag):
     def wrap_tag(self):
         return '<{} href=\'{}\'>{}</{}>' % {self.html_tag, self.content, self.html_tag}
 
-def convert():
+def begin_conversion():
     path = argv[1]
-    fo = FileOps(path)
+    file_ops = FileOps(path)
+    file_ops.open_files()
+
+    specials = ['#', '*', '_', '[', ']', '(', ')']
     
+    stack = []
+    for line in file_ops.content:
+        for char in line:
+            if char in specials:
+                
