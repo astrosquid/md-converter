@@ -22,24 +22,19 @@ class FileOps:
         self.in_file.close()
         self.out_file.close()
 
-class TagFormatter:
-    def __init__(self):
-        return
-
 class Tag:
-    def __init__(self, html_tag, content):
-        self.content = content
+    def __init__(self, html_tag):
         self.html_tag = html_tag
 
     def wrap_tag(self):
-        return '<{}>{}</{}>' % {self.html_tag, self.content, self.html_tag}
+        return '<{} class="why-article">{}</{}>' % {self.html_tag, self.content, self.html_tag}
 
     def add_content(self, content):
         self.content = content
 
 class Header(Tag):
     def __init__(self):
-        super().__init__()
+        super().__init__('h')
         self.level = 0
 
     def add_level(self):
@@ -50,12 +45,17 @@ class Header(Tag):
 
 class Link(Tag):
     def __init__(self, link):
-        super().__init__()
+        super().__init__('a')
         self.link = link
-        self.html_tag = 'a'
 
     def wrap_tag(self):
         return '<{} href=\'{}\'>{}</{}>' % {self.html_tag, self.content, self.html_tag}
+
+class Formatted(Tag):
+    def __init__(self):
+        super().__init__('prefor')
+
+    # everything else within-bounds of this tag will be accepted as content
 
 def make_header(line):
     header = Header()
@@ -65,7 +65,7 @@ def make_header(line):
         if line[count] == '#':
             header.add_level()
             count += 1
-        else 
+        else:
             break
     
     header.add_content(line[(count+1):])
@@ -75,17 +75,20 @@ def make_header(line):
 # make a stack for every element we're converting
 def analyze_line(line):
     specials = ['#', '*', '_', '[', ']', '(', ')']
-    used = [] # stack
+    # [Bold, Italics, Link, Preformatted]
+    used = [False, False, False, False]
     output = [] # stack
 
     # if this line is just a newline... 
-
-    # if this line is a header...
     if line[0] == '\n':
         output += line
         return output
+    # if this line is a header...
     elif line[0] == '#':
         header = make_header(line)
+    else:
+        # make a new paragraph
+        para = Tag('p')
     
     for char in line:
         if char in specials:
@@ -98,6 +101,9 @@ def convert():
     file_ops = FileOps(path)
     file_ops.open_files()
     
-    stack = []
+    output = []
     for line in file_ops.content:
-        analyze_line(line)
+        output.append(analyze_line(line))
+
+    # write output to file
+    # return and exit
