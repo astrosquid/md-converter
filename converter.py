@@ -32,6 +32,12 @@ class Tag:
     def add_content(self, content):
         self.content = content
 
+    def get_content(self):
+        return self.content
+
+    def elim_notation(self):
+        self.content = self.content[1:len(self.content)-1]
+
 class Header(Tag):
     def __init__(self):
         super().__init__('h')
@@ -39,6 +45,7 @@ class Header(Tag):
 
     def add_level(self):
         self.level += 1
+        self.html_tag = 'h' + str(self.level)
 
     def get_level(self):
         return self.level
@@ -56,6 +63,10 @@ class Formatted(Tag):
         super().__init__('prefor')
 
     # everything else within-bounds of this tag will be accepted as content
+
+class Escape():
+    def __init__(self, esc_char):
+        self.char = esc_char
 
 def make_header(line):
     header = Header()
@@ -88,8 +99,8 @@ def analyze_line(line):
         header = make_header(line)
     else:
         # make a new paragraph
-        para = Tag('p')
-    
+        output.append(Tag('p'))
+
     for char in line:
         if char in specials:
             if char == used[len(used - 1)]:
