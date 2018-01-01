@@ -1,6 +1,27 @@
 #!/usr/local/bin/python3
 from sys import argv
 
+class Stack:
+    """Quick stack implementation using a Python list."""
+    stack = []
+
+    def __init__(self):
+        pass
+
+    def push(self, element):
+        """Push an element to the top of the stack."""
+        self.stack.append(element)
+
+    def pop(self):
+        """Pop an element off the top of the stack."""
+        elem = self.stack[-1]
+        del self.stack[-1]
+        return elem
+
+    def peek(self):
+        """See the most recent item on the stack."""
+        return self.stack[-1]
+
 class FileOps:
     def __init__(self, path):
         self.in_path = path
@@ -53,15 +74,11 @@ class Header(Tag):
         # TODO: can probably cut out 'count' here
         self.level = 0
         limit = 6
-        count = 0
-        while count < limit:
-            if line[count] == '#':
+        while self.level < limit:
+            if line[self.level] == '#':
                 self.add_level()
-                count += 1
             else:
                 break
-
-        self.add_content(line[(count+1):])
 
     def add_level(self):
         self.level += 1
