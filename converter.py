@@ -131,14 +131,9 @@ def analyze_line(line):
         '(' : ')'
     }
     specials = ['#', '*', '_', '[', ']', '(', ')']
-    output = [] # stack
+    output = Stack() # stack
 
-    # If this line is just a newline... 
-    if line[0] == '\n':
-        # ...add it to output and return...
-        output += line
-        return output
-    elif line[0] == '#':
+    if line[0] == '#':
         # ...or, make a header...
         header = Header(line)
         output.append(header)
@@ -149,13 +144,15 @@ def analyze_line(line):
     for char in line:
         if char in specials:
             # is this a new element?
-            if char == output.last:
+            if char == output[-1]:
                 # wrap up this element, append to last element's content
                 pass
             else:
                 tag = decide_tag(char)
         else:
-            output.append(char)
+            output.peek().add_content(char)
+
+    return output
 
 def convert():
     path = argv[1]
