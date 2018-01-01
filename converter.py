@@ -43,11 +43,14 @@ class FileOps:
         self.in_file.close()
         self.out_file.close()
 
-class Tag:
+class Tag():
     def __init__(self, html_tag):
         self.html_tag = html_tag
         self.content = ""
 
+    def get_tag(self):
+        return self.html_tag
+    
     def wrap_tag(self):
         """Create HTML representation of self."""
         return '<{} class="why-article">{}</{}>' % {self.html_tag, self.content, self.html_tag}
@@ -103,6 +106,16 @@ class Link(Tag):
         # the first open bracket and last close bracket after the parens
         pass
 
+class Parens():
+    def __init__(self):
+        self.content = ""
+
+    def add_content(self, content):
+        self.content += content
+
+    def no_parens(self):
+        return self.content[1:len(self.content)-1]
+
 class Formatted(Tag):
     def __init__(self):
         super().__init__('prefor')
@@ -119,7 +132,22 @@ def decide_tag(char):
     elif char == '_':
         return Tag('i')
     elif char == '[':
-        return Link()
+        return Link("")
+
+def is_ending_tag(char, tag):
+    ending_tags = {
+        'p' : '\n',
+        'h' : '\n',
+        'b' : '*',
+        'i' : '_',
+        'a' : ']'
+    }
+
+    if char in ending_tags.keys():
+        if ending_tags[tag] == char:
+            return True
+
+    return False
 
 def analyze_line(line):
     """Create HTML string literal of the line passed in."""
@@ -130,23 +158,27 @@ def analyze_line(line):
         '[' : ']',
         '(' : ')'
     }
+
     specials = ['#', '*', '_', '[', ']', '(', ')']
     output = Stack() # stack
 
     if line[0] == '#':
         # ...or, make a header...
         header = Header(line)
-        output.append(header)
+        output.push(header)
     else:
         # ...or make a new paragraph.
-        output.append(Tag('p'))
+        output.push(Tag('p'))
 
     for char in line:
         if char in specials:
-            # is this a new element?
-            if char == output[-1]:
+            # is this the ending to the elem on the top of the stack?
+            if is_ending_tag(char, output.peek().get_tag()):
                 # wrap up this element, append to last element's content
-                pass
+                output.peek().add_content(char)
+                elem = output.pop()
+                output.peek().add_content(elem.elim_notation)
+            #
             else:
                 tag = decide_tag(char)
         else:
@@ -163,5 +195,7 @@ def convert():
     for line in file_ops.content:
         output.append(analyze_line(line))
 
-    # write output to file
-    # return and exit
+    file_ops.write(output)
+    file_ops.close_files()
+
+convert()
