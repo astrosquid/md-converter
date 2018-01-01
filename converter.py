@@ -179,6 +179,9 @@ def analyze_line(line):
         header = Header(line)
         output.push(header)
         # Eliminate group of # at beginning of line.
+    elif line[0] == '\n':
+        # TODO: make a line break (new class, no content) and return
+        pass
     else:
         # ...or make a new paragraph.
         output.push(Tag('p'))
@@ -190,9 +193,9 @@ def analyze_line(line):
             # is this the ending to the elem on the top of the stack?
             if is_ending_tag(char, output.peek().get_tag()):
                 # wrap up this element, append to last element's content
-                output.peek().add_content(char)
+                # output.peek().add_content(char)
                 elem = output.pop()
-                output.peek().add_content(elem.wrap_tag)
+                output.peek().add_content(elem.wrap_tag())
             else:
                 output.push(decide_tag(char))
         elif char == '\n':
