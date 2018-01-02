@@ -11,26 +11,33 @@ class Stack:
 
     def push(self, element):
         """Push an element to the top of the stack."""
-        print("Pushing into the stack: " + element.__class__.__name__)
+        # print("Pushing into the stack: " + element.__class__.__name__)
         self.stack.append(element)
 
     def pop(self):
         """Pop an element off the top of the stack."""
         elem = self.stack[-1]
         del self.stack[-1]
-        print("Popping off the stack: " + elem.__class__.__name__)
+        #print("Popping off the stack: " + elem.__class__.__name__)
         return elem
 
     def peek(self):
         """See the most recent item on the stack."""
         return self.stack[-1]
 
+    def empty(self):
+        if not stack:
+            return True
+        return False
+
 class Tag():
+    """General HTML tag class. Works for simple tags like bold (b) and italics (i)."""
     def __init__(self, html_tag):
         self.html_tag = html_tag
         self.content = ""
 
     def get_tag(self):
+        """Return the HTML string tag as a literal."""
         return self.html_tag
     
     def wrap_tag(self):
@@ -91,6 +98,7 @@ class Link(Tag):
         pass
 
 class Parens():
+    """Should delete, no longer needed."""
     def __init__(self):
         self.content = ""
 
@@ -100,9 +108,9 @@ class Parens():
     def no_parens(self):
         return self.content[1:len(self.content)-1]
 
-class Formatted(Tag):
+class Preformatted(Tag):
     def __init__(self):
-        super().__init__('prefor')
+        super().__init__('pre')
 
     # everything else within-bounds of this tag will be accepted as content
 
@@ -115,10 +123,12 @@ def decide_tag(char):
         return Tag('b')
     elif char == '_':
         return Tag('i')
+    elif char == '(':
+        return Parens()
     elif char == '[':
         return Link("")
 
-    print(char + " is not special, aborting.")
+    # print(char + " is not special, aborting.")
     sys.exit(1)
 
 def is_ending_tag(char, tag):
@@ -128,7 +138,9 @@ def is_ending_tag(char, tag):
         'h' : '\n',
         'b' : '*',
         'i' : '_',
-        'a' : ']'
+        'a' : ']',
+        'pre' : '```',
+        'inlpre' : 'tt'
     }
 
     if tag in ending_tags.keys():
@@ -166,15 +178,16 @@ def analyze_line(line):
 
     for char in line:
         if char in specials:
-            # is this the ending to the elem on the top of the stack?
+            # Is this the ending to the elem on the top of the stack?
             if is_ending_tag(char, output.peek().get_tag()):
                 # wrap up this element, append to last element's content
-                # output.peek().add_content(char)
                 elem = output.pop()
                 output.peek().add_content(elem.wrap_tag())
             else:
+                # No -- then start a new element and push.
                 output.push(decide_tag(char))
         elif char == '\n':
+            # End this line.
             block += output.pop().wrap_tag()
         else:
             output.peek().add_content(char)
@@ -189,6 +202,7 @@ def list_to_str(l):
     return x
 
 def convert():
+    # TODO: add a newline to the end of the md file.
     path = argv[1]
     out_path = path.split('.')[0] + '.html'
     
