@@ -82,13 +82,25 @@ class Header(Tag):
         return super().wrap_tag()
 
 class Link(Tag):
-    def __init__(self, link):
+    def __init__(self):
         super().__init__('a')
+        self.link = ''
+        self.content_finished = False
+
+    def set_href(self, link):
         self.link = link
 
+    def finished_content(self):
+        self.content_finished = True
+
+    def add_content(self, content):
+        if self.content_finished():
+            self.link += content
+        else:
+            self.content += content
+
     def wrap_tag(self):
-        # TODO: fix this
-        return '<{} href=\'{}\'>{}</{}>' % {self.html_tag, self.content, self.html_tag}
+        return '<{} href=\'{}\'>{}</{}>' % {self.html_tag, self.link, self.content, self.html_tag}
 
     def elim_notation(self):
         # TODO
@@ -115,6 +127,7 @@ class Preformatted(Tag):
     # everything else within-bounds of this tag will be accepted as content
 
 class Escape():
+    """Used to denote the existence of an escaped character."""
     def __init__(self):
         pass
 
@@ -123,20 +136,18 @@ def decide_tag(char):
         return Tag('b')
     elif char == '_':
         return Tag('i')
-    elif char == '(':
-        return Parens()
     elif char == '[':
-        return Link("")
+        return Link()
 
     # print(char + " is not special, aborting.")
     sys.exit(1)
 
 def is_ending_tag(char, tag):
-    print('Passed to ending checker: ' + char + tag)
+    # print('Passed to ending checker: ' + char + tag)
     ending_tags = {
         'b' : '*',
         'i' : '_',
-        'a' : ']',
+        'a' : ')',
         'pre' : '```',
         'tt' : '`'
     }
@@ -149,7 +160,7 @@ def is_ending_tag(char, tag):
 
 def analyze_line(line):
     """Create HTML string literal of the line passed in."""
-    specials = ['*', '_', '[', ']', '(', ')', '`']
+    #specials = ['*', '_', '[', ']', '(', ')', '`']
     beginnings = ['*', '_', '[', '`']
     output = Stack() # stack
 
@@ -158,6 +169,11 @@ def analyze_line(line):
         header = Header(line)
         output.push(header)
         # TODO: Eliminate group of # at beginning of line.
+        for char in line:
+            if char == '#':
+                line = line[1:]
+            else:
+                break
     elif line[0] == '\n':
         # TODO: make a line break (new class, no content) and return
         pass
@@ -190,18 +206,11 @@ def analyze_line(line):
 
     return block
 
-def list_to_str(l):
-    x = ""
-    for y in l:
-        x += y
-    
-    return x
-
 def convert():
     # TODO: add a newline to the end of the md file.
     path = argv[1]
     out_path = path.split('.')[0] + '.html'
-    
+
     output = []
 
     with open(path) as f:
@@ -209,9 +218,10 @@ def convert():
             output.append(analyze_line(line))
 
     out_file = open(out_path, 'w')
-    for line in output: 
+    for line in output:
         out_file.write(line)
-    out_file.write('\n')
+        out_file.write('\n')
+        out_file.write('\n')
     out_file.close()
 
 convert()
