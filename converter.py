@@ -224,8 +224,8 @@ def convert():
 
     out_file = open(out_path, 'w')
     for line in output: 
-        out_file.write(str(output))
+        out_file.write(line)
+    out_file.write('\n')
     out_file.close()
-    #file_ops.close_files()
 
 convert()
