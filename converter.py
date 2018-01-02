@@ -26,7 +26,7 @@ class Stack:
         return self.stack[-1]
 
     def empty(self):
-        if not stack:
+        if not self.stack:
             return True
         return False
 
@@ -115,8 +115,8 @@ class Preformatted(Tag):
     # everything else within-bounds of this tag will be accepted as content
 
 class Escape():
-    def __init__(self, esc_char):
-        self.char = esc_char
+    def __init__(self):
+        pass
 
 def decide_tag(char):
     if char == '*':
@@ -134,13 +134,11 @@ def decide_tag(char):
 def is_ending_tag(char, tag):
     print('Passed to ending checker: ' + char + tag)
     ending_tags = {
-        'p' : '\n',
-        'h' : '\n',
         'b' : '*',
         'i' : '_',
         'a' : ']',
         'pre' : '```',
-        'inlpre' : 'tt'
+        'tt' : '`'
     }
 
     if tag in ending_tags.keys():
@@ -151,22 +149,15 @@ def is_ending_tag(char, tag):
 
 def analyze_line(line):
     """Create HTML string literal of the line passed in."""
-    markdown = {
-        '#' : '\n',
-        '*' : '*',
-        '_' : '_',
-        '[' : ']',
-        '(' : ')'
-    }
-
-    specials = ['*', '_', '[', ']', '(', ')']
+    specials = ['*', '_', '[', ']', '(', ')', '`']
+    beginnings = ['*', '_', '[', '`']
     output = Stack() # stack
 
     if line[0] == '#':
         # Make a header...
         header = Header(line)
         output.push(header)
-        # Eliminate group of # at beginning of line.
+        # TODO: Eliminate group of # at beginning of line.
     elif line[0] == '\n':
         # TODO: make a line break (new class, no content) and return
         pass
@@ -177,15 +168,20 @@ def analyze_line(line):
     block = ""
 
     for char in line:
-        if char in specials:
-            # Is this the ending to the elem on the top of the stack?
-            if is_ending_tag(char, output.peek().get_tag()):
-                # wrap up this element, append to last element's content
-                elem = output.pop()
-                output.peek().add_content(elem.wrap_tag())
-            else:
-                # No -- then start a new element and push.
-                output.push(decide_tag(char))
+        if not output.empty() and output.peek().__class__.__name__ == 'Escape':
+            output.pop()
+            output.peek().add_content(char)
+            continue
+
+        if char in beginnings:
+            # New element to stack.
+            output.push(decide_tag(char))
+        elif not output.empty() and is_ending_tag(char, output.peek().get_tag()):
+            # wrap up this element, append to last element's content
+            elem = output.pop()
+            output.peek().add_content(elem.wrap_tag())
+        elif char == '\\':
+            output.push(Escape())
         elif char == '\n':
             # End this line.
             block += output.pop().wrap_tag()
