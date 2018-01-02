@@ -25,30 +25,6 @@ class Stack:
         """See the most recent item on the stack."""
         return self.stack[-1]
 
-class FileOps:
-    def __init__(self, path):
-        self.in_path = path
-        self.out_path = path.split('.')[0] + '.html'
-
-    def get_location(self):
-        return self.in_path
-
-    def open_files(self):
-        self.in_file = open(self.in_path, 'r')
-        self.out_file = open(self.out_path, 'w')
-        with open(self.in_path) as f:
-            self.content = f.readlines
-
-    def write(self, content):
-        self.out_file.write(content)
-
-    def close_files(self):
-        self.in_file.close()
-        self.out_file.close()
-
-    def get_content(self):
-        return self.content
-
 class Tag():
     def __init__(self, html_tag):
         self.html_tag = html_tag
