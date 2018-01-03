@@ -131,97 +131,101 @@ class Escape():
     def __init__(self):
         pass
 
-def decide_tag(char):
-    if char == '*':
-        return Tag('b')
-    elif char == '_':
-        return Tag('i')
-    elif char == '[':
-        return Link()
+class Analyzer:
+    def __init__(self):
+        self.output = Stack()
 
-    # print(char + " is not special, aborting.")
-    sys.exit(1)
+    def decide_tag(self, char):
+        if char == '*':
+            return Tag('b')
+        elif char == '_':
+            return Tag('i')
+        elif char == '[':
+            return Link()
 
-def is_ending_tag(char, tag):
-    # print('Passed to ending checker: ' + char + tag)
-    ending_tags = {
-        'b' : '*',
-        'i' : '_',
-        'a' : ')',
-        'pre' : '```',
-        'tt' : '`'
-    }
+        sys.exit(1)
 
-    if tag in ending_tags.keys():
-        if ending_tags[tag] == char:
-            return True
+    def is_ending_tag(self, char, tag):
+        # print('Passed to ending checker: ' + char + tag)
+        ending_tags = {
+            'b' : '*',
+            'i' : '_',
+            'a' : ')',
+            'pre' : '```',
+            'tt' : '`'
+        }
 
-    return False
+        if tag in ending_tags.keys():
+            if ending_tags[tag] == char:
+                return True
 
-def analyze_line(line):
-    """Create HTML string literal of the line passed in."""
-    #specials = ['*', '_', '[', ']', '(', ')', '`']
-    beginnings = ['*', '_', '[', '`']
-    output = Stack() # stack
+        return False
 
-    if line[0] == '#':
-        # Make a header...
-        header = Header(line)
-        output.push(header)
-        # TODO: Eliminate group of # at beginning of line.
-        for char in line:
-            if char == '#':
-                line = line[1:]
-            else:
-                break
-    elif line[0] == '\n':
-        # TODO: make a line break (new class, no content) and return
-        pass
-    else:
-        # ...or make a new paragraph.
-        output.push(Tag('p'))
+    def analyze_line(self, line):
+        """Create HTML string literal of the line passed in."""
+        #specials = ['*', '_', '[', ']', '(', ')', '`']
+        beginnings = ['*', '_', '[', '`']
 
-    block = ""
-
-    for char in line:
-        if not output.empty() and output.peek().__class__.__name__ == 'Escape':
-            output.pop()
-            output.peek().add_content(char)
-            continue
-
-        if char in beginnings:
-            # New element to stack.
-            output.push(decide_tag(char))
-        elif not output.empty() and is_ending_tag(char, output.peek().get_tag()):
-            # wrap up this element, append to last element's content
-            elem = output.pop()
-            output.peek().add_content(elem.wrap_tag())
-        elif char == '\\':
-            output.push(Escape())
-        elif char == '\n':
-            # End this line.
-            block += output.pop().wrap_tag()
+        if line[0] == '#':
+            # Make a header...
+            header = Header(line)
+            self.output.push(header)
+            # TODO: Eliminate group of # at beginning of line.
+            for char in line:
+                if char == '#':
+                    line = line[1:]
+                else:
+                    break
+        elif line[0] == '\n':
+            # TODO: make a line break (new class, no content) and return
+            pass
         else:
-            output.peek().add_content(char)
+            # ...or make a new paragraph.
+            self.output.push(Tag('p'))
 
-    return block
+        block = ""
 
-def convert():
-    # TODO: add a newline to the end of the md file.
-    path = argv[1]
-    out_path = path.split('.')[0] + '.html'
+        for char in line:
+            if not self.output.empty() and self.output.peek().__class__.__name__ == 'Escape':
+                self.output.pop()
+                self.output.peek().add_content(char)
+                continue
 
-    output = []
+            if char in beginnings:
+                # New element to stack.
+                self.output.push(self.decide_tag(char))
+            elif not self.output.empty() and self.is_ending_tag(char, self.output.peek().get_tag()):
+                # wrap up this element, append to last element's content
+                elem = self.output.pop()
+                self.output.peek().add_content(elem.wrap_tag())
+            elif char == '\\':
+                self.output.push(Escape())
+            elif char == '\n':
+                # End this line.
+                block += self.output.pop().wrap_tag()
+            else:
+                self.output.peek().add_content(char)
 
-    with open(path) as f:
-        for line in f:
-            output.append(analyze_line(line))
+        return block
 
-    out_file = open(out_path, 'w')
-    for line in output:
-        out_file.write(line)
-        out_file.write('\n')
-        out_file.write('\n')
-    out_file.close()
+    def convert(self):
+        # TODO: add a newline to the end of the md file.
+        path = argv[1]
+        out_path = path.split('.')[0] + '.html'
 
-convert()
+        output = []
+
+        with open(path) as f:
+            for line in f:
+                output.append(self.analyze_line(line))
+
+        out_file = open(out_path, 'w')
+        for line in output:
+            out_file.write(line)
+            out_file.write('\n')
+            out_file.write('\n')
+        out_file.close()
+
+if __name__ == '__main__':
+    analyzer = Analyzer()
+    analyzer.convert()
