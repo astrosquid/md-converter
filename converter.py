@@ -94,13 +94,13 @@ class Link(Tag):
         self.content_finished = True
 
     def add_content(self, content):
-        if self.content_finished():
+        if self.content_finished:
             self.link += content
         else:
             self.content += content
 
     def wrap_tag(self):
-        return '<{} href=\'{}\'>{}</{}>' % {self.html_tag, self.link, self.content, self.html_tag}
+        return '<{} href=\'{}\'>{}</{}>'.format(self.html_tag, self.link, self.content, self.html_tag)
 
     def elim_notation(self):
         # TODO
@@ -161,6 +161,30 @@ class Analyzer:
 
         return False
 
+    def end_tag(self, char):
+        if char == ']':
+            # maybe don't do anything, move on to the next character
+            pass
+        elif char == ')':
+            # ending the link half of an 'a' tag
+            # TODO: pop the paren element off the stack,
+            # then pass it's content as a link value to the 
+            # link object. Then finish the link object.
+            elem = self.output.pop()
+            if self.output.peek().__class__.__name__ == 'Link':
+                # set the link's href
+                self.output.peek().set_href(elem.get_content)
+                # then pop it and give to the next element
+                elem = self.output.pop()
+                self.output.peek().add_content(elem.wrap_tag())
+            else:
+                # just close the parens and add to the 
+                # next element on the stack.
+                pass
+        else:
+            elem = self.output.pop()
+            self.output.peek().add_content(elem.wrap_tag())
+
     def analyze_line(self, line):
         """Create HTML string literal of the line passed in."""
         #specials = ['*', '_', '[', ']', '(', ')', '`']
@@ -186,6 +210,8 @@ class Analyzer:
         block = ""
 
         for char in line:
+            # Check for escape.
+            # TODO: make this it's own function maybe.
             if not self.output.empty() and self.output.peek().__class__.__name__ == 'Escape':
                 self.output.pop()
                 self.output.peek().add_content(char)
@@ -209,7 +235,7 @@ class Analyzer:
         return block
 
     def convert(self):
-        # TODO: add a newline to the end of the md file.
+        # TODO: add a newline to the end of the md file?
         path = argv[1]
         out_path = path.split('.')[0] + '.html'
 
